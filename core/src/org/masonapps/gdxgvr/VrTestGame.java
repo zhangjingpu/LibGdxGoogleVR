@@ -34,6 +34,7 @@ public class VrTestGame extends GVRApplicationListener {
         modelBatch = new ModelBatch();
 
         cam = new PerspectiveCamera();
+        cam.position.set(0, 1.5f, 0);
 
         environment = new Environment();
         environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
@@ -43,16 +44,40 @@ public class VrTestGame extends GVRApplicationListener {
         model = modelBuilder.createBox(1f, 1f, 1f,
                 new Material(),
                 VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
-        final int n = 12;
-        for (int i = 0; i < n; i++) {
-            final double a = Math.PI * 2.0 / (double) n * (double) i;
-            final float r = 10;
-            final double a2 = a + Math.PI / 2.0;
-            float x = (float) Math.cos(a2) * r;
-            float z = (float) Math.sin(a2) * r;
+        {
             ModelInstance instance = new ModelInstance(model);
-            instance.materials.get(0).set(ColorAttribute.createDiffuse(0.3f, 0.6f, (float) i / n, 1f));
-            instance.transform.setTranslation(x, -1f, z);
+            instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.WHITE));
+            instance.transform.setTranslation(0, 0, 5);
+            instances.add(instance);
+        }
+        {
+            ModelInstance instance = new ModelInstance(model);
+            instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.RED));
+            instance.transform.setTranslation(0, 0, -5);
+            instances.add(instance);
+        }
+        {
+            ModelInstance instance = new ModelInstance(model);
+            instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.CYAN));
+            instance.transform.setTranslation(5, 0, 0);
+            instances.add(instance);
+        }
+        {
+            ModelInstance instance = new ModelInstance(model);
+            instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.BLUE));
+            instance.transform.setTranslation(-5, 0, 0);
+            instances.add(instance);
+        }
+        {
+            ModelInstance instance = new ModelInstance(model);
+            instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.YELLOW));
+            instance.transform.setTranslation(0, 7, 0);
+            instances.add(instance);
+        }
+        {
+            ModelInstance instance = new ModelInstance(model);
+            instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.BROWN));
+            instance.transform.setTranslation(0, -3, 0);
             instances.add(instance);
         }
         headView = new Matrix4();
@@ -70,9 +95,10 @@ public class VrTestGame extends GVRApplicationListener {
         Gdx.gl.glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-        cam.projection.set(gdxEye.getPerspective());
-        cam.view.set(headView);
+//        cam.view.set(headView);
+        cam.view.setToTranslation(-cam.position.x, -cam.position.y, -cam.position.z);
         cam.view.mulLeft(gdxEye.getView());
+        cam.projection.set(gdxEye.getPerspective());
         cam.combined.set(cam.projection);
         Matrix4.mul(cam.combined.val, cam.view.val);
 
