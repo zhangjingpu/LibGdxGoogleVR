@@ -9,12 +9,12 @@ import com.badlogic.gdx.math.Vector3;
  */
 public class GdxHeadTransform {
 
-    private Matrix4 headView;
-    private Quaternion quaternion;
-    private Vector3 right;
-    private Vector3 up;
-    private Vector3 forward;
-    private Vector3 translation;
+    public Matrix4 headView;
+    public Quaternion quaternion;
+    public Vector3 right;
+    public Vector3 up;
+    public Vector3 forward;
+    public Vector3 translation;
     private Vector3 eulerAngles;
 
     public GdxHeadTransform() {
@@ -51,32 +51,8 @@ public class GdxHeadTransform {
         this.eulerAngles.set(array[offset], array[offset + 1], array[offset + 2]);
     }
 
-    public Matrix4 getHeadView() {
-        return headView;
-    }
-
     public void setHeadView(float[] headView) {
         this.headView.set(headView);
-    }
-
-    public Quaternion getQuaternion() {
-        return quaternion;
-    }
-
-    public Vector3 getRight() {
-        return right;
-    }
-
-    public Vector3 getUp() {
-        return up;
-    }
-
-    public Vector3 getForward() {
-        return forward;
-    }
-
-    public Vector3 getTranslation() {
-        return translation;
     }
 
     public Vector3 getEulerAngles() {

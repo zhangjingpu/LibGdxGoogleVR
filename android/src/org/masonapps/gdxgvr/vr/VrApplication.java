@@ -46,7 +46,7 @@ import java.lang.reflect.Method;
  * Created by Bob on 10/9/2016.
  */
 
-public class GVRApplication extends Activity implements AndroidApplicationBase {
+public class VrApplication extends Activity implements AndroidApplicationBase {
     static {
         GdxNativesLoader.load();
     }
@@ -56,12 +56,12 @@ public class GVRApplication extends Activity implements AndroidApplicationBase {
     protected final SnapshotArray<LifecycleListener> lifecycleListeners = new SnapshotArray<>();
     private final Array<AndroidEventListener> androidEventListeners = new Array<AndroidEventListener>();
     public Handler handler;
-    protected GVRGraphics graphics;
+    protected VrGraphics graphics;
     protected AndroidInput input;
     protected AndroidAudio audio;
     protected AndroidFiles files;
     protected AndroidNet net;
-    protected ApplicationListener listener;
+    protected VrApplicationListener listener;
     protected boolean firstResume = true;
     protected int logLevel = LOG_INFO;
     protected boolean useImmersiveMode = false;
@@ -70,27 +70,12 @@ public class GVRApplication extends Activity implements AndroidApplicationBase {
     private int wasFocusChanged = -1;
     private boolean isWaitingForAudio = false;
 
-    /**
-     * This method has to be called in the {@link Activity#onCreate(Bundle)} method. It sets up all the things necessary to get
-     * input, render via OpenGL and so on. Uses a default {@link AndroidApplicationConfiguration}.
-     *
-     * @param listener the {@link ApplicationListener} implementing the program logic
-     **/
-    public void initialize(ApplicationListener listener) {
+    public void initialize(VrApplicationListener listener) {
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
         initialize(listener, config);
     }
 
-    /**
-     * This method has to be called in the {@link Activity#onCreate(Bundle)} method. It sets up all the things necessary to get
-     * input, render via OpenGL and so on. You can configure other aspects of the application with the rest of the fields in the
-     * {@link AndroidApplicationConfiguration} instance.
-     *
-     * @param listener the {@link ApplicationListener} implementing the program logic
-     * @param config   the {@link AndroidApplicationConfiguration}, defining various settings of the application (use accelerometer,
-     *                 etc.).
-     */
-    public void initialize(ApplicationListener listener, AndroidApplicationConfiguration config) {
+    public void initialize(VrApplicationListener listener, AndroidApplicationConfiguration config) {
         init(listener, config, false);
     }
 
@@ -103,7 +88,7 @@ public class GVRApplication extends Activity implements AndroidApplicationBase {
      * @param listener the {@link ApplicationListener} implementing the program logic
      * @return the GLSurfaceView of the application
      */
-    public View initializeForView(ApplicationListener listener) {
+    public View initializeForView(VrApplicationListener listener) {
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
         return initializeForView(listener, config);
     }
@@ -120,23 +105,35 @@ public class GVRApplication extends Activity implements AndroidApplicationBase {
      *                 etc.).
      * @return the GLSurfaceView of the application
      */
-    public View initializeForView(ApplicationListener listener, AndroidApplicationConfiguration config) {
+    public View initializeForView(VrApplicationListener listener, AndroidApplicationConfiguration config) {
         init(listener, config, true);
         return graphics.getView();
     }
 
-    private void init(ApplicationListener listener, AndroidApplicationConfiguration config, boolean isForView) {
+    private void init(VrApplicationListener listener, AndroidApplicationConfiguration config, boolean isForView) {
         if (this.getVersion() < MINIMUM_SDK) {
             throw new GdxRuntimeException("LibGDX requires Android API Level " + MINIMUM_SDK + " or later.");
         }
         config.useImmersiveMode = true;
-        graphics = new GVRGraphics(this, config);
+        graphics = new VrGraphics(this, config);
         input = AndroidInputFactory.newAndroidInput(this, this, graphics.view, config);
         audio = new AndroidAudio(this, config);
         this.getFilesDir(); // workaround for Android bug #10515463
         files = new AndroidFiles(this.getAssets(), this.getFilesDir().getAbsolutePath());
         net = new AndroidNet(this);
         this.listener = listener;
+        ((VrSurfaceView) graphics.getView()).setOnCardboardTriggerListener(new Runnable() {
+            @Override
+            public void run() {
+                VrApplication.this.listener.onCardboardTrigger();
+            }
+        });
+        ((VrSurfaceView) graphics.getView()).setOnCardboardBackListener(new Runnable() {
+            @Override
+            public void run() {
+                VrApplication.this.listener.onCardboardBack();
+            }
+        });
         this.handler = new Handler();
         this.useImmersiveMode = config.useImmersiveMode;
         this.hideStatusBar = config.hideStatusBar;
@@ -145,18 +142,18 @@ public class GVRApplication extends Activity implements AndroidApplicationBase {
         addLifecycleListener(new LifecycleListener() {
 
             @Override
-            public void resume () {
+            public void resume() {
                 // No need to resume audio here
             }
 
             @Override
-            public void pause () {
+            public void pause() {
                 // TODO: 10/11/2016 fix audio 
 //                audio.pause();
             }
 
             @Override
-            public void dispose () {
+            public void dispose() {
                 audio.dispose();
             }
         });
@@ -398,7 +395,7 @@ public class GVRApplication extends Activity implements AndroidApplicationBase {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                GVRApplication.this.finish();
+                VrApplication.this.finish();
             }
         });
     }
@@ -505,13 +502,14 @@ public class GVRApplication extends Activity implements AndroidApplicationBase {
     public Array<Runnable> getExecutedRunnables() {
         return executedRunnables;
     }
+
     @Override
     public Window getApplicationWindow() {
         return this.getWindow();
     }
 
     @Override
-    public Handler getHandler () {
+    public Handler getHandler() {
         return this.handler;
     }
 }

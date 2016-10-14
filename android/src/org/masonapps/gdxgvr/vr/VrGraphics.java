@@ -45,9 +45,9 @@ import javax.microedition.khronos.opengles.GL10;
  * Created by Bob on 10/9/2016.
  */
 
-public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
+public class VrGraphics implements Graphics, GvrView.StereoRenderer {
 
-    private static final String LOG_TAG = GVRGraphics.class.getSimpleName();
+    private static final String LOG_TAG = VrGraphics.class.getSimpleName();
 
     private static final int OFFSET_RIGHT = 0;
     private static final int OFFSET_UP = OFFSET_RIGHT + 3;
@@ -55,18 +55,16 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
     private static final int OFFSET_TRANSLATION = OFFSET_FORWARD + 3;
     private static final int OFFSET_QUATERNION = OFFSET_TRANSLATION + 3;
     private static final int OFFSET_EULER = OFFSET_QUATERNION + 4;
-    
-    static volatile boolean enforceContinuousRendering = false;
 
-    final View view;
-    int width;
-    int height;
-    AndroidApplicationBase app;
-    GL20 gl20;
-    GL30 gl30;
-    EGLContext eglContext;
-    GLVersion glVersion;
-    String extensions;
+    protected final VrSurfaceView view;
+    protected int width;
+    protected int height;
+    protected AndroidApplicationBase app;
+    protected GL20 gl20;
+    protected GL30 gl30;
+    protected EGLContext eglContext;
+    protected GLVersion glVersion;
+    protected String extensions;
 
     protected long lastFrameTime = System.nanoTime();
     protected float deltaTime = 0;
@@ -76,11 +74,11 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
     protected int fps;
     protected WindowedMean mean = new WindowedMean(5);
 
-    volatile boolean created = false;
-    volatile boolean running = false;
-    volatile boolean pause = false;
-    volatile boolean resume = false;
-    volatile boolean destroy = false;
+    protected volatile boolean created = false;
+    protected volatile boolean running = false;
+    protected volatile boolean pause = false;
+    protected volatile boolean resume = false;
+    protected volatile boolean destroy = false;
 
     private float ppiX = 0;
     private float ppiY = 0;
@@ -92,15 +90,15 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
     protected final AndroidApplicationConfiguration config;
     private BufferFormat bufferFormat = new BufferFormat(5, 6, 5, 0, 16, 0, 0, false);
     private boolean isContinuous = true;
-    private GdxHeadTransform gdxHeadTransform;
-    private GdxEye gdxEye;
+    protected GdxHeadTransform gdxHeadTransform;
+    protected GdxEye gdxEye;
 
-    public GVRGraphics(AndroidApplicationBase application, AndroidApplicationConfiguration config) {
+    public VrGraphics(AndroidApplicationBase application, AndroidApplicationConfiguration config) {
         this(application, config, true);
         init(application);
     }
 
-    public GVRGraphics(AndroidApplicationBase application, AndroidApplicationConfiguration config, boolean focusableView) {
+    public VrGraphics(AndroidApplicationBase application, AndroidApplicationConfiguration config, boolean focusableView) {
         this.config = config;
         this.app = application;
         view = createGLSurfaceView(application);
@@ -118,9 +116,18 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
         array = new float[3 * 4 + 4 + 3];
     }
 
-    protected View createGLSurfaceView(AndroidApplicationBase application) {
+    protected VrSurfaceView createGLSurfaceView(AndroidApplicationBase application) {
         if (!checkGL20()) throw new GdxRuntimeException("Libgdx requires OpenGL ES 2.0");
-        GVRSurfaceView view = new GVRSurfaceView(application.getContext());
+        VrSurfaceView view = new VrSurfaceView(application.getContext());
+//        view.setEGLConfigChooser(config.r, config.g, config.b, config.a, config.depth, config.stencil);
+        view.setRenderer(this);
+        return view;
+    }
+
+
+    protected VrSurfaceView createGLSurfaceView(AndroidApplicationBase application) {
+        if (!checkGL20()) throw new GdxRuntimeException("Libgdx requires OpenGL ES 2.0");
+        VrSurfaceView view = new VrSurfaceView(application.getContext());
 //        view.setEGLConfigChooser(config.r, config.g, config.b, config.a, config.depth, config.stencil);
         view.setRenderer(this);
         return view;
@@ -128,13 +135,13 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
 
     public void onPauseGLSurfaceView() {
         if (view != null) {
-            if (view instanceof GVRSurfaceView) ((GVRSurfaceView) view).onPause();
+            view.onPause();
         }
     }
 
     public void onResumeGLSurfaceView() {
         if (view != null) {
-            if (view instanceof GVRSurfaceView) ((GVRSurfaceView) view).onResume();
+            view.onResume();
         }
     }
 
@@ -204,7 +211,7 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
     public int getBackBufferHeight() {
         return height;
     }
-    
+
     private void setupGL() {
         if (config.useGL30 && glVersion.getMajorVersion() > 2) {
             if (gl30 != null) return;
@@ -225,6 +232,8 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
         String rendererString = Gdx.gl.glGetString(GL10.GL_RENDERER);
         glVersion = new GLVersion(Application.ApplicationType.Android, versionString, vendorString, rendererString);
     }
+
+    int[] value = new int[1];
 
     private void logConfig(EGLConfig config) {
         EGL10 egl = (EGL10) EGLContext.getEGL();
@@ -247,8 +256,6 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
 
         bufferFormat = new BufferFormat(r, g, b, a, d, s, samples, coverageSample);
     }
-
-    int[] value = new int[1];
 
     private int getAttrib(EGL10 egl, EGLDisplay display, EGLConfig config, int attrib, int defValue) {
         if (egl.eglGetConfigAttrib(display, config, attrib, value)) {
@@ -482,13 +489,13 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
     }
 
     @Override
-    public void setContinuousRendering(boolean isContinuous) {
-        // not supported
+    public boolean isContinuousRendering() {
+        return true;
     }
 
     @Override
-    public boolean isContinuousRendering() {
-        return true;
+    public void setContinuousRendering(boolean isContinuous) {
+        // not supported
     }
 
     @Override
@@ -524,20 +531,6 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
     public void setSystemCursor(Cursor.SystemCursor systemCursor) {
     }
 
-    private class AndroidDisplayMode extends Graphics.DisplayMode {
-        protected AndroidDisplayMode(int width, int height, int refreshRate, int bitsPerPixel) {
-            super(width, height, refreshRate, bitsPerPixel);
-        }
-    }
-
-    private class AndroidMonitor extends Graphics.Monitor {
-
-        public AndroidMonitor(int virtualX, int virtualY, String name) {
-            super(virtualX, virtualY, name);
-        }
-
-    }
-
     @Override
     public void onNewFrame(HeadTransform headTransform) {
         gdxHeadTransform.setHeadView(headTransform.getHeadView());
@@ -560,7 +553,7 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
         headTransform.getEulerAngles(array, OFFSET_EULER);
         gdxHeadTransform.setEulerAngles(array, OFFSET_EULER);
 
-        ((GVRApplicationListener) Gdx.app.getApplicationListener()).onNewFrame(gdxHeadTransform);
+        ((VrApplicationListener) Gdx.app.getApplicationListener()).onNewFrame(gdxHeadTransform);
     }
 
     @Override
@@ -638,7 +631,7 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
             // TODO: 10/11/2016 fix input 
 //            app.getInput().processEvents();
             frameId++;
-            ((GVRApplicationListener) Gdx.app.getApplicationListener()).onDrawEye(gdxEye);
+            ((VrApplicationListener) Gdx.app.getApplicationListener()).onDrawEye(gdxEye);
         }
 
         if (lpause) {
@@ -718,5 +711,19 @@ public class GVRGraphics implements Graphics, GvrView.StereoRenderer {
 
     @Override
     public void onRendererShutdown() {
+    }
+
+    private class AndroidDisplayMode extends Graphics.DisplayMode {
+        protected AndroidDisplayMode(int width, int height, int refreshRate, int bitsPerPixel) {
+            super(width, height, refreshRate, bitsPerPixel);
+        }
+    }
+
+    private class AndroidMonitor extends Graphics.Monitor {
+
+        public AndroidMonitor(int virtualX, int virtualY, String name) {
+            super(virtualX, virtualY, name);
+        }
+
     }
 }

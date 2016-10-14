@@ -19,16 +19,16 @@ import javax.microedition.khronos.egl.EGL10;
  * Created by Bob on 10/9/2016.
  */
 
-public class GVRSurfaceView extends GvrView {
+public class VrSurfaceView extends GvrView {
 
     private static final boolean DEBUG = false;
-    static String TAG = GVRSurfaceView.class.getSimpleName();
+    static String TAG = VrSurfaceView.class.getSimpleName();
 
-    public GVRSurfaceView(Context context) {
+    public VrSurfaceView(Context context) {
         super(context);
     }
 
-    public GVRSurfaceView(Context context, boolean translucent, int depth, int stencil) {
+    public VrSurfaceView(Context context, boolean translucent, int depth, int stencil) {
         super(context);
     }
 
@@ -47,7 +47,7 @@ public class GVRSurfaceView extends GvrView {
             outAttrs.imeOptions = outAttrs.imeOptions | EditorInfo.IME_FLAG_NO_EXTRACT_UI;
         }
 
-        return new BaseInputConnection(GVRSurfaceView.this, false) {
+        return new BaseInputConnection(VrSurfaceView.this, false) {
             @Override
             public boolean deleteSurroundingText(int beforeLength, int afterLength) {
                 int sdkVersion = android.os.Build.VERSION.SDK_INT;
